@@ -124,24 +124,31 @@ void count_index(vector<int> *chunk_size, vector<int> *indexes, int game_info[3]
 
 }
 
-int main(int argc, char *argv[]) {
-
+/**
+ * each process calls this function and execute the GoL
+*/
+void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
+	
 	// NW N NE
 	// W  C  E
 	// SW S SE
 
-    int rank, size;
+
+
+}
+
+int main(int argc, char *argv[]) {
+    
+	
+	int rank, size;
     MPI_Init(&argc, &argv);
-
-    // get the number of process 
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-    // get current procces id 
-    // MPI_COMM_WORLD - prediefined constant to match all the processes  
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-		
+	
 	// global table of the game life 
 	vector<int> global_table;
+	vector<int> chunk_size(size);
+	vector<int> indexes(size); 		
 	// information about the game	
 	int game_info[3];
 
@@ -161,13 +168,9 @@ int main(int argc, char *argv[]) {
 	MPI_Bcast(&game_info, 3, MPI_INT, MAIN_PROCES, MPI_COMM_WORLD);
 
 	// count chunk_size and indexes for each process 	
-	vector<int> chunk_size(size);
-	vector<int> indexes(size); 		
 	count_index(&chunk_size, &indexes, game_info);
-	
 	// local vectors
 	vector<int> local(chunk_size[rank]);
-
 		
 	for (int i=0; i < global_table.size(); i++){
 		cout << global_table[i];
@@ -180,7 +183,9 @@ int main(int argc, char *argv[]) {
 	// scatter the global board among ranks using sendCounts and displacements
     MPI_Scatterv(global_table.data(), chunk_size.data(), indexes.data(), MPI_INT,  
         local.data(), chunk_size[rank], MPI_INT ,MAIN_PROCES, MPI_COMM_WORLD);
-	
+
+	game_of_life(&local, game_info, rank, size);
+
 
 	// reasembly
 	MPI_Gatherv(local.data(), chunk_size[rank], MPI_INT, global_table.data(),
