@@ -19,12 +19,6 @@ using namespace std;
 
 
 
-typedef struct Table_size{
-	int rows;
-	int columns; 
-} Table_size;
-
-
 
 /**
  * First process that parses input into the globalTable and sets the number 
@@ -39,12 +33,13 @@ typedef struct Table_size{
  * 01110000
  * 00000000
 */
-void first_proces(int argc, char *argv[], vector<int> *globalTable, 
-				  int *steps, Table_size *table_size){
+void first_proces(int argc, char *argv[], vector<int> *global_table, 
+				  int *steps, int *column_size){
 
 	string 		file_name = ""; 
 	ifstream 	file;
 
+	// Open file 
 	if (argc != 3){
 		cerr << "Error: wrong arguments" << endl;
 		exit(1);
@@ -60,21 +55,39 @@ void first_proces(int argc, char *argv[], vector<int> *globalTable,
 		exit(1);
 	}
 
+	// Parse file into the global_table 	
 	char c;
+	bool first_row  = false;
+	int  count 		= 0;
+	*column_size 	= 0;
 	while (file.get(c)){
-		cout << c; 
-		globalTable->push_back(c);
+		
+		if (c == '\n'){
+			if (first_row == false){
+				first_row = true;
+				*column_size = count;
+			}
+		}
+		else {
+			count++;
+			global_table->push_back(c);
+		}	
+		cout << c;
 	}
 
-	cout << "first proces" << endl;
-	cout << "argc: " << argc << endl;
-	for (int i = 0; i < argc; i++)
-		cout << "argv: " << argv[i]<< endl;
-	
-	cout << "0 " << argv[0]<< endl;
-	cout << "1 " << argv[1]<< endl;
-	cout << "2 " << argv[2]<< endl;
 
+	cout << "Size:         " << global_table->size() << endl;
+	cout << "Column size:  " << column_size << endl;
+
+
+	for (int i=0; i < global_table->size(); i++){
+		cout << static_cast<char>((*global_table)[i]);
+		if (((i+1) % *column_size) == 0){
+		
+			cout << endl;
+		}
+
+	}
 
 	// close the file 
 	file.close();
@@ -110,14 +123,14 @@ int main(int argc, char *argv[]) {
 		// global table of the game life 
 		vector<int> global_table;
 		// size of the input file 
-		Table_size table_size;	
+		int column_size;	
 
-		first_proces(argc, argv, &global_table, &rank, &table_size);
+		first_proces(argc, argv, &global_table, &rank, &column_size);
 
     }
     // Nth process even the last one 
     else {
-		cout << rank << " proces" << endl;
+		//cout << rank << " proces" << endl;
     }
 
 
