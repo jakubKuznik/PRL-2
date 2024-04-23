@@ -13,19 +13,71 @@
 
 using namespace std;
 
+// define arguments meaning 
+#define ARGS_FILE 1
+#define ARGS_STEPS 2
+
+
+
+typedef struct Table_size{
+	int rows;
+	int columns; 
+} Table_size;
+
+
+
 /**
  * First process that parses input into the globalTable and sets the number 
  * of steps 
  * 
  * 
  * IF error exits the program 
+ * 
+ * File format: 
+ * 00000000
+ * 00111000
+ * 01110000
+ * 00000000
 */
-void first_proces(int argc, char *argv[], vector<int> *globalTable, int *steps){
+void first_proces(int argc, char *argv[], vector<int> *globalTable, 
+				  int *steps, Table_size *table_size){
+
+	string 		file_name = ""; 
+	ifstream 	file;
+
+	if (argc != 3){
+		cerr << "Error: wrong arguments" << endl;
+		exit(1);
+	}
+
+	file_name 	= argv[ARGS_FILE];
+	*steps 		= atoi(argv[ARGS_STEPS]);	
+
+	
+	file.open(file_name);
+	if (!file){
+		cerr << "Error: Unable to open file" << endl;
+		exit(1);
+	}
+
+	char c;
+	while (file.get(c)){
+		cout << c; 
+		globalTable->push_back(c);
+	}
 
 	cout << "first proces" << endl;
 	cout << "argc: " << argc << endl;
 	for (int i = 0; i < argc; i++)
 		cout << "argv: " << argv[i]<< endl;
+	
+	cout << "0 " << argv[0]<< endl;
+	cout << "1 " << argv[1]<< endl;
+	cout << "2 " << argv[2]<< endl;
+
+
+	// close the file 
+	file.close();
 
 }
 
@@ -57,8 +109,10 @@ int main(int argc, char *argv[]) {
 		int steps = 0;
 		// global table of the game life 
 		vector<int> global_table;
-		
-		first_proces(argc, argv, &global_table, &rank);
+		// size of the input file 
+		Table_size table_size;	
+
+		first_proces(argc, argv, &global_table, &rank, &table_size);
 
     }
     // Nth process even the last one 
