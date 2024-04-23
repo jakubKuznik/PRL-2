@@ -155,13 +155,6 @@ int main(int argc, char *argv[]) {
 		cout << "Rows:         " << game_info[ROWS] << endl;
 		cout << "Steps:        " << game_info[STEPS] << endl;
 
-		for (int i=0; i < global_table.size(); i++){
-			cout << global_table[i];
-			if (((i+1) % game_info[COLUMN_SIZE]) == 0){
-				cout << endl;
-			}
-		}
-		cout << endl;
     }
 
 	// tell how many steps, rows and colums we have 
@@ -175,68 +168,31 @@ int main(int argc, char *argv[]) {
 	// local vectors
 	vector<int> local(chunk_size[rank]);
 
+		
+	for (int i=0; i < global_table.size(); i++){
+		cout << global_table[i];
+		if (((i+1) % game_info[COLUMN_SIZE]) == 0){
+			cout << endl;
+		}
+	}
+	cout << endl;
+
 	// scatter the global board among ranks using sendCounts and displacements
     MPI_Scatterv(global_table.data(), chunk_size.data(), indexes.data(), MPI_INT,  
         local.data(), chunk_size[rank], MPI_INT ,MAIN_PROCES, MPI_COMM_WORLD);
-
-
-
-	int sum = 23;
-	if (rank == 0){
-		for (int j = 0; j < 10000; j++){
-			sum *= 23;
-		}
-		for (int i = 0; i < chunk_size[0]; i++){
-			cout << local[i];
-			if (((i+1) % game_info[COLUMN_SIZE]) == 0){
-				cout << endl;
-			}
-		}
-	}
-	else if (rank == 1){
-		for (int j = 0; j < 20000; j++){
-			sum *= 23;
-		}
-		for (int j = 0; j < 1000; j++)
-			;;
-		for (int i = 0; i < chunk_size[1]; i++){
-			cout << local[i];
-			if (((i+1) % game_info[COLUMN_SIZE]) == 0){
-				cout << endl;
-			}
-		}
-	}
-	else if (rank == 2){
-		for (int j = 0; j < 30000; j++){
-			sum *= 23;
-		}
-		for (int j = 0; j < 2000; j++)
-			;;
-		for (int i = 0; i < chunk_size[2]; i++){
-			cout << local[i];
-			if (((i+1) % game_info[COLUMN_SIZE]) == 0){
-				cout << endl;
-			}
-		}
-	}
-	else if (rank == 3){
-		for (int j = 0; j < 40000; j++){
-			sum *= 23;
-		}
-		for (int i = 0; i < chunk_size[3]; i++){
-			cout << local[i];
-			if (((i+1) % game_info[COLUMN_SIZE]) == 0){
-				cout << endl;
-			}
-		}
-		cout << endl;
-		cout << endl;
-	}
-
-	cout << sum;
 	
 
+	// reasembly
+	MPI_Gatherv(local.data(), chunk_size[rank], MPI_INT, global_table.data(),
+		chunk_size.data(), indexes.data(), MPI_INT, MAIN_PROCES, MPI_COMM_WORLD);
 
+	for (int i=0; i < global_table.size(); i++){
+		cout << global_table[i];
+		if (((i+1) % game_info[COLUMN_SIZE]) == 0){
+			cout << endl;
+		}
+	}
+	cout << endl;
 
 
     MPI_Finalize();
