@@ -5,6 +5,9 @@
 // Login: xkuzni04
 // Year: 2024
 
+// number of process: 4 
+
+
 #include <iostream>
 #include <fstream>
 #include <queue>
@@ -16,8 +19,6 @@ using namespace std;
 // define arguments meaning 
 #define ARGS_FILE 1
 #define ARGS_STEPS 2
-
-
 
 
 /**
@@ -72,22 +73,9 @@ void first_proces(int argc, char *argv[], vector<int> *global_table,
 			count++;
 			global_table->push_back(c);
 		}	
-		cout << c;
 	}
 
 
-	cout << "Size:         " << global_table->size() << endl;
-	cout << "Column size:  " << column_size << endl;
-
-
-	for (int i=0; i < global_table->size(); i++){
-		cout << static_cast<char>((*global_table)[i]);
-		if (((i+1) % *column_size) == 0){
-		
-			cout << endl;
-		}
-
-	}
 
 	// close the file 
 	file.close();
@@ -95,16 +83,10 @@ void first_proces(int argc, char *argv[], vector<int> *global_table,
 }
 
 int main(int argc, char *argv[]) {
-    
-	// // get my rank 
-    // int rank, size;
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // // get the number of process 
-    // MPI_Comm_size(MPI_COMM_WORLD, &size);
-    // // Broadcast the event from process 0 to all other processes
-    // MPI_Bcast(&total_nums, 1,MPI_INT, 0, MPI_COMM_WORLD);
-    // MPI_Recv(&rcBuff, 1, MPI_BYTE, rank-1, UP, MPI_COMM_WORLD, &status);
-    // MPI_Send(&sBuff, 1, MPI_BYTE, (rank+1), UP, MPI_COMM_WORLD);
+
+	// NW N NE
+	// W  C  E
+	// SW S SE
 
     int rank, size;
     MPI_Init(&argc, &argv);
@@ -115,23 +97,42 @@ int main(int argc, char *argv[]) {
     // get current procces id 
     // MPI_COMM_WORLD - prediefined constant to match all the processes  
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
+		
+	// number of game steps 
+	// global table of the game life 
+	vector<int> global_table;
     if (rank == 0){
 		
-		// number of game steps 
-		int steps = 0;
-		// global table of the game life 
-		vector<int> global_table;
 		// size of the input file 
+		int steps;
 		int column_size;	
-
+		int rows; 
 		first_proces(argc, argv, &global_table, &rank, &column_size);
+		rows = global_table.size() / column_size; 
+
+		cout << "Size:         " << global_table.size() << endl;
+		cout << "Column size:  " << column_size << endl;
+		cout << "Rows:         " << rows << endl;
+
+		for (int i=0; i < global_table.size(); i++){
+			cout << static_cast<char>((global_table)[i]);
+			if (((i+1) % column_size) == 0){
+				cout << endl;
+			}
+		}
+
+
 
     }
-    // Nth process even the last one 
-    else {
-		//cout << rank << " proces" << endl;
-    }
+
+	// tell how many steps, rows and colums we have 
+	//MPI_Bcast()
+
+
+
+
+
+
 
 
     MPI_Finalize();
