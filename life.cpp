@@ -5,7 +5,8 @@
 // Login: xkuzni04
 // Year: 2024
 
-// number of process: 4 
+// WRAP-around implementation
+// number of process that it has been tested with: 4 
 
 
 #include <iostream>
@@ -101,8 +102,6 @@ void count_index(vector<int> *chunk_size, vector<int> *indexes, int game_info[3]
 	// get the number of process 
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-
-
 	int one_p_rows 		=  game_info[ROWS] / size;
 	int rows_left  		=  game_info[ROWS] % size;
 	int rows 	   		= 0;
@@ -123,9 +122,6 @@ void count_index(vector<int> *chunk_size, vector<int> *indexes, int game_info[3]
 		(*chunk_size)[i] 	= rows * game_info[COLUMN_SIZE];
 		rows_processed += rows;
 	}
-
-
-
 }
 
 /**
@@ -133,9 +129,6 @@ void count_index(vector<int> *chunk_size, vector<int> *indexes, int game_info[3]
 */
 void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 	
-	// NW N NE
-	// W  C  E
-	// SW S SE
 	
 	// neigh-up
 	// neigh-down
@@ -232,6 +225,11 @@ void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 
 			for (int i = 0; i < game_info[COLUMN_SIZE]; i++){
 				alive_neigh = 0;
+			
+				// NW N NE
+				// W  C  E
+				// SW S SE
+			
 				// first cell 
 				if (i == 0){
 					// left 
@@ -322,20 +320,6 @@ int main(int argc, char *argv[]) {
 
 		first_proces(argc, argv, &global_table, &game_info[STEPS], &game_info[COLUMN_SIZE]);
 		game_info[ROWS] = global_table.size() / game_info[COLUMN_SIZE]; 
-
-		cout << "Size:         " << global_table.size() << endl;
-		cout << "Column size:  " << game_info[COLUMN_SIZE] << endl;
-		cout << "Rows:         " << game_info[ROWS] << endl;
-		cout << "Steps:        " << game_info[STEPS] << endl;
-		
-		cout << endl << "START: " << endl;
-		for (int i=0; i < global_table.size(); i++){
-			cout << global_table[i];
-			if (((i+1) % game_info[COLUMN_SIZE]) == 0){
-				cout << endl;
-			}
-		}
-		cout << endl;
     }
 
 	// tell how many steps, rows and colums we have 
@@ -358,15 +342,20 @@ int main(int argc, char *argv[]) {
 
 	// end 
 	if (rank == MAIN_PROCES){
-		cout << "END: " << endl;
-		for (int i=0; i < global_table.size(); i++){
+		int j = 0;
+		for (int i = 0; i < global_table.size(); i++){
+			if (i == (indexes[j] + chunk_size[j])){
+				j++;
+			}
+			if ((i % game_info[COLUMN_SIZE]) == 0){
+				cout << j << ": ";
+			}
 			cout << global_table[i];
 			if (((i+1) % game_info[COLUMN_SIZE]) == 0){
 				cout << endl;
 			}
 		}
 	}
-
 
     MPI_Finalize();
     return 0;
