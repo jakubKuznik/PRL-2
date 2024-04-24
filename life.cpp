@@ -149,13 +149,15 @@ void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 	vector<int> work(game_info[COLUMN_SIZE]);
 	vector<int> work_down(game_info[COLUMN_SIZE]);
 	
+	vector<int> out(local->size());
+	
 	MPI_Status status;
-	MPI_Request req[2];
 
 	int total_rows = local->size() / game_info[COLUMN_SIZE];
 	int alive_neigh = 0;
 	int dead_neigh  = 0;
 	int LAST = game_info[COLUMN_SIZE] -1; 
+	int index; 
 
 	for (int i = 0; i < game_info[STEPS]; i++){
 		
@@ -167,112 +169,135 @@ void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 		}
 		// send first and last row to each of my neighbour 
 		if (rank == MAIN_PROCES){ // first process 
-			MPI_Isend(my_first_row.data(), game_info[COLUMN_SIZE], MPI_INT, (size-1), FROM_DOWN, MPI_COMM_WORLD, &req[0]);
-			MPI_Isend(my_last_row.data(), game_info[COLUMN_SIZE], MPI_INT, (rank+1), FROM_UP,   MPI_COMM_WORLD, &req[1]);
+			MPI_Send(my_first_row.data(), game_info[COLUMN_SIZE], MPI_INT, (size-1), FROM_DOWN, MPI_COMM_WORLD);
+			MPI_Send(my_last_row.data(), game_info[COLUMN_SIZE], MPI_INT, (rank+1), FROM_UP,   MPI_COMM_WORLD);
 		
 			MPI_Recv(from_down.data(), game_info[COLUMN_SIZE], MPI_INT, (rank+1), FROM_DOWN, MPI_COMM_WORLD, &status);
 			MPI_Recv(from_up.data(), game_info[COLUMN_SIZE], MPI_INT, (size-1), FROM_UP,   MPI_COMM_WORLD, &status);
 		}
 		else if (rank == size-1){ // last process 
-			MPI_Isend(my_first_row.data(), game_info[COLUMN_SIZE], MPI_INT, (rank-1), FROM_DOWN,  MPI_COMM_WORLD, &req[0]);
-			MPI_Isend(my_last_row.data(), game_info[COLUMN_SIZE], MPI_INT, MAIN_PROCES, FROM_UP, MPI_COMM_WORLD, &req[1]);
+			MPI_Send(my_first_row.data(), game_info[COLUMN_SIZE], MPI_INT, (rank-1), FROM_DOWN,  MPI_COMM_WORLD);
+			MPI_Send(my_last_row.data(), game_info[COLUMN_SIZE], MPI_INT, MAIN_PROCES, FROM_UP, MPI_COMM_WORLD);
 		
 			MPI_Recv(from_down.data(), game_info[COLUMN_SIZE], MPI_INT, MAIN_PROCES, FROM_DOWN, MPI_COMM_WORLD, &status);
 			MPI_Recv(from_up.data(), game_info[COLUMN_SIZE], MPI_INT, (rank-1), FROM_UP,      MPI_COMM_WORLD, &status);
 		}
 		else{
-			MPI_Isend(my_first_row.data(), game_info[COLUMN_SIZE], MPI_INT, (rank-1), FROM_DOWN, MPI_COMM_WORLD, &req[0]);
-			MPI_Isend(my_last_row.data(), game_info[COLUMN_SIZE], MPI_INT, (rank+1), FROM_UP,   MPI_COMM_WORLD, &req[1]);
+			MPI_Send(my_first_row.data(), game_info[COLUMN_SIZE], MPI_INT, (rank-1), FROM_DOWN, MPI_COMM_WORLD);
+			MPI_Send(my_last_row.data(), game_info[COLUMN_SIZE], MPI_INT, (rank+1), FROM_UP,   MPI_COMM_WORLD);
 		
 			MPI_Recv(from_down.data(), game_info[COLUMN_SIZE], MPI_INT, (rank+1), FROM_DOWN,    MPI_COMM_WORLD, &status);
 			MPI_Recv(from_up.data(), game_info[COLUMN_SIZE], MPI_INT, (rank-1), FROM_UP,      MPI_COMM_WORLD, &status);
 		}
 
-		if (rank == MAIN_PROCES){
-			cout << "total rows: " << total_rows << endl;
-			int from;
-			for (int r = 0; r < total_rows; r++){
+		int from;
+		for (int r = 0; r < total_rows; r++){
 
-				// get current working row 	
-				from = r * game_info[COLUMN_SIZE]; int p = 0;
+			// get current working row 	
+			from = r * game_info[COLUMN_SIZE]; 
+			int p = 0;
+			for (int i = from; i < (from + game_info[COLUMN_SIZE]); i++){
+				work[p++] = (*local)[i];
+			}
+
+			// if first row 				
+			if (r == 0){
+				for (int x = 0; x < game_info[COLUMN_SIZE]; x++){
+					work_up[x]  = from_up[x]; 
+				}
+			}
+			else{
+				from = (r-1) * game_info[COLUMN_SIZE];
+				int p = 0;
 				for (int i = from; i < (from + game_info[COLUMN_SIZE]); i++){
-					work[p++] = (*local)[i];
+					work_up[p++] = (*local)[i];
 				}
 
-				// if first row 				
-				if (r == 0){
-					copy(from_up.begin(), from_up.end(), work_up.begin());
-				}
-				else{
-					from = (r-1) * game_info[COLUMN_SIZE]; int p = 0;
-					for (int i = from; i < (from + game_info[COLUMN_SIZE]); i++){
-						work_up[p++] = (*local)[i];
-					}
+			}
 
+			// if last row 
+			if ((r+1) == total_rows){
+				for (int x = 0; x < game_info[COLUMN_SIZE]; x++){
+					work_down[x]  = from_down[x]; 
 				}
-
-				// if last row 
-				if ((r-1) == total_rows){
-					copy(from_down.begin(), from_down.end(), work_down.begin());
-				}
-				else{
-					from = (r+1) * game_info[COLUMN_SIZE]; int p = 0;
-					for (int i = from; i < (from + game_info[COLUMN_SIZE]); i++){
-						work_down[p++] = (*local)[i];
-					}
-
+			}
+			else{
+				from = (r+1) * game_info[COLUMN_SIZE]; 
+				int p = 0;
+				for (int i = from; i < (from + game_info[COLUMN_SIZE]); i++){
+					work_down[p++] = (*local)[i];
 				}
 
-				// each alive cell with less then 2 alive neighbours 
+			}
+
+			for (int i = 0; i < game_info[COLUMN_SIZE]; i++){
+				alive_neigh = 0;
+				// first cell 
+				if (i == 0){
+					// left 
+					alive_neigh += work_up[LAST];
+					alive_neigh += work_down[LAST];
+					alive_neigh += work[LAST];
+					// right 
+					alive_neigh += work_up[i+1];
+					alive_neigh += work_down[i+1];
+					alive_neigh += work[i+1];
+				} 
+				// last cell 
+				if ((i+1) == game_info[COLUMN_SIZE]){
+					// left 
+					alive_neigh += work_up[i-1];
+					alive_neigh += work_down[i-1];
+					alive_neigh += work[i-1];
+					// right 
+					alive_neigh += work_up[0];
+					alive_neigh += work_down[0];
+					alive_neigh += work[0];
+				}
+				if (!(i == 0) && !((i+1) == game_info[COLUMN_SIZE])){
+					// left 
+					alive_neigh += work_up[i-1];
+					alive_neigh += work_down[i-1];
+					alive_neigh += work[i-1];
+					// right 
+					alive_neigh += work_up[i+1];
+					alive_neigh += work_down[i+1];
+					alive_neigh += work[i+1];
+
+				}
+					
+				alive_neigh += work_up[i];
+				alive_neigh += work_down[i];
+				
+				// each alive cell with less then 2 alive neighbours dies  
 				// each alive cell with 2 or 3 neighbours stays alive
 				// each alive cell with more than 3 alive neighbours dies 
 				// each dead cell  with exactly 3 alive neighbours alives 
-				for (int i = 0; i < game_info[COLUMN_SIZE]; i++){
-					alive_neigh = 0;
-					// first cell 
-					if (i == 0){
-						// left 
-						alive_neigh += work_up[LAST];
-						alive_neigh += work_down[LAST];
-						alive_neigh += work[LAST];
-						// right 
-						alive_neigh += work_up[i+1];
-						alive_neigh += work_down[i+1];
-						alive_neigh += work[i+1];
-					} 
-					// last cell 
-					if ((i+1) == game_info[COLUMN_SIZE]){
-						// left 
-						alive_neigh += work_up[i-1];
-						alive_neigh += work_down[i-1];
-						alive_neigh += work[i-1];
-						// right 
-						alive_neigh += work_up[0];
-						alive_neigh += work_down[0];
-						alive_neigh += work[0];
-					}
-					
-					alive_neigh += work_up[i];
-					alive_neigh += work_down[i];
-				
-					// each alive cell with less then 2 alive neighbours dies  
-					// each alive cell with 2 or 3 neighbours stays alive
-					// each alive cell with more than 3 alive neighbours dies 
-					// each dead cell  with exactly 3 alive neighbours alives 
-					if (work[i] == DEAD){
-						if (alive_neigh == 3){
-							work[i] = ALIVE;
-						}
+				index = (r * game_info[COLUMN_SIZE]) + i;
+				if (work[i] == DEAD){
+					if (alive_neigh == 3){
+						out[index] = ALIVE;
 					}
 					else{
-						if (alive_neigh < 2){
-							work[i] = DEAD;
-						}
-						if (alive_neigh > 3){
-							work[i] = DEAD;
-						}
+						out[index] = work[i];
 					}
 				}
+				else{
+					if (alive_neigh < 2){
+						out[index] = DEAD;
+					}
+					else if (alive_neigh > 3){
+						out[index] = DEAD;
+					}
+					else{
+						out[index] = work[i];
+					}
+				}
+			}
+
+			// copy to my local buff 
+			for (int x = 0; x < local->size() ; x++){
+				(*local)[x] = out[x]; 
 			}
 		}
 	}
