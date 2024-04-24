@@ -183,14 +183,15 @@ void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 			MPI_Recv(from_up.data(), game_info[COLUMN_SIZE], MPI_INT, (rank-1), FROM_UP,      MPI_COMM_WORLD, &status);
 		}
 
-		int from;
+		int from = 0;
+		int p = 0;
 		for (int r = 0; r < total_rows; r++){
 
 			// get current working row 	
 			from = r * game_info[COLUMN_SIZE]; 
-			int p = 0;
-			for (int i = from; i < (from + game_info[COLUMN_SIZE]); i++){
-				work[p++] = (*local)[i];
+			p = 0;
+			for (int j = from; j < (from + game_info[COLUMN_SIZE]); j++){
+				work[p++] = (*local)[j];
 			}
 
 			// if first row 				
@@ -293,10 +294,10 @@ void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 				}
 			}
 
-			// copy to my local buff 
-			for (int x = 0; x < local->size() ; x++){
-				(*local)[x] = out[x]; 
-			}
+		}
+		// copy to my local buff 
+		for (int x = 0; x < local->size() ; x++){
+			(*local)[x] = out[x]; 
 		}
 	}
 }
