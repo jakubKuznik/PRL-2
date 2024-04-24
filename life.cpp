@@ -6,7 +6,7 @@
 // Year: 2024
 
 // WRAP-around implementation
-// number of process that it has been tested with: 4 
+// number of process that should be run: 4 
 
 
 #include <iostream>
@@ -89,7 +89,6 @@ void first_proces(int argc, char *argv[], vector<int> *global_table,
 
 	// close the file 
 	file.close();
-
 }
 
 /**
@@ -112,7 +111,6 @@ void count_index(vector<int> *chunk_size, vector<int> *indexes, int game_info[3]
 		if (rows_left > 0){
 			rows = one_p_rows + 1;	
 			rows_left--;
-		
 		}
 		else{
 			rows = one_p_rows;
@@ -202,7 +200,7 @@ void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 			}
 			else{
 				from = (r-1) * game_info[COLUMN_SIZE];
-				int p = 0;
+				p = 0;
 				for (int i = from; i < (from + game_info[COLUMN_SIZE]); i++){
 					work_up[p++] = (*local)[i];
 				}
@@ -217,19 +215,18 @@ void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 			}
 			else{
 				from = (r+1) * game_info[COLUMN_SIZE]; 
-				int p = 0;
+				p = 0;
 				for (int i = from; i < (from + game_info[COLUMN_SIZE]); i++){
 					work_down[p++] = (*local)[i];
 				}
 
 			}
-
+			
+			// NW N NE
+			// W  C  E
+			// SW S SE
 			for (int i = 0; i < game_info[COLUMN_SIZE]; i++){
 				alive_neigh = 0;
-			
-				// NW N NE
-				// W  C  E
-				// SW S SE
 			
 				// first cell 
 				if (i == 0){
@@ -262,7 +259,6 @@ void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 					alive_neigh += work_up[i+1];
 					alive_neigh += work_down[i+1];
 					alive_neigh += work[i+1];
-
 				}
 					
 				alive_neigh += work_up[i];
@@ -304,7 +300,6 @@ void game_of_life(vector<int> *local, int game_info[3], int rank, int size){
 
 int main(int argc, char *argv[]) {
     
-	
 	int rank, size;
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
